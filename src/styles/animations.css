@@ -1,0 +1,112 @@
+/* ============================================================
+   DayScribe — Animations & Transitions
+   ============================================================ */
+
+/* --- Keyframes --- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.85; }
+  75%       { opacity: 0.95; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes checkmark {
+  0%   { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes inkDrop {
+  0%   { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes candle {
+  0%, 100% { transform: scaleX(1) translateY(0); }
+  25%       { transform: scaleX(0.9) translateY(-1px); }
+  50%       { transform: scaleX(1.05) translateY(0); }
+  75%       { transform: scaleX(0.95) translateY(1px); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: var(--shadow-amber); }
+  50%       { box-shadow: var(--shadow-amber-strong); }
+}
+
+/* --- Utility animation classes --- */
+
+.animate-fadeIn       { animation: fadeIn 300ms ease forwards; }
+.animate-fadeInUp     { animation: fadeInUp 350ms ease forwards; }
+.animate-fadeInDown   { animation: fadeInDown 350ms ease forwards; }
+.animate-slideInLeft  { animation: slideInLeft 350ms ease forwards; }
+.animate-slideInRight { animation: slideInRight 350ms ease forwards; }
+.animate-scaleIn      { animation: scaleIn 300ms var(--transition-spring) forwards; }
+.animate-pulse        { animation: pulse 2s ease infinite; }
+.animate-bounce       { animation: bounce 1s ease infinite; }
+.animate-spin         { animation: spin 1s linear infinite; }
+.animate-flicker      { animation: flicker 3s ease infinite; }
+
+/* --- Stagger delays --- */
+.delay-1 { animation-delay: 50ms; }
+.delay-2 { animation-delay: 100ms; }
+.delay-3 { animation-delay: 150ms; }
+.delay-4 { animation-delay: 200ms; }
+.delay-5 { animation-delay: 250ms; }
+
+/* --- Page transitions --- */
+.page-enter {
+  animation: fadeInUp 350ms ease forwards;
+}
+
+.page-exit {
+  animation: fadeIn 200ms ease reverse forwards;
+}
