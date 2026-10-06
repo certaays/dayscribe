@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAppTheme } from '../../App';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Flame,
   Home,
@@ -10,6 +11,7 @@ import {
   Sun,
   Moon,
 } from '../icons/AppIcons';
+import { User, LogIn } from 'lucide-react';
 import './Navbar.css';
 
 const NAV_ITEMS = [
@@ -22,6 +24,7 @@ const NAV_ITEMS = [
 
 export function Navbar() {
   const { theme, toggleTheme } = useAppTheme();
+  const { user, openAuthModal } = useAuth();
   const isDark = theme === 'dark';
 
   return (
@@ -51,8 +54,30 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Theme toggle — desktop */}
+        {/* Account Profile & Theme toggle — desktop */}
         <div className="sidebar-footer">
+          {/* User Account Button */}
+          <button
+            className="user-account-btn"
+            onClick={openAuthModal}
+            title={user ? `Akun: ${user.name || user.email}` : 'Masuk atau buat akun baru'}
+          >
+            <div className="user-account-info">
+              <div className="user-avatar-badge">
+                {user ? <User size={15} className="text-amber-400" /> : <LogIn size={15} className="text-[var(--color-text-muted)]" />}
+              </div>
+              <div className="user-account-text">
+                <span className="user-account-name">
+                  {user ? (user.name || 'Akun Saya') : 'Masuk / Daftar'}
+                </span>
+                <span className="user-account-sub">
+                  {user ? 'Tersimpan di Server' : 'Simpan datamu'}
+                </span>
+              </div>
+            </div>
+            {user && <span className="account-online-dot" />}
+          </button>
+
           <button
             className="theme-toggle"
             onClick={toggleTheme}
@@ -83,6 +108,17 @@ export function Navbar() {
             </NavLink>
           );
         })}
+        {/* User Account Button — mobile */}
+        <button
+          className="bottom-nav-item account-mobile-item"
+          onClick={openAuthModal}
+          title={user ? `Akun: ${user.name || user.email}` : 'Masuk / Daftar'}
+        >
+          <span className="bottom-nav-icon">
+            {user ? <User size={20} className="text-amber-400" /> : <LogIn size={20} />}
+          </span>
+          <span className="bottom-nav-label">{user ? 'Akun' : 'Masuk'}</span>
+        </button>
         {/* Theme toggle — mobile */}
         <button
           className="bottom-nav-item theme-toggle-mobile"
@@ -98,4 +134,3 @@ export function Navbar() {
     </>
   );
 }
-

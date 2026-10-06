@@ -78,7 +78,7 @@
   /* --- Layout --- */
   --nav-height-mobile: 72px;
   --sidebar-width: 260px;
-  --content-max-width: 720px;
+  --content-max-width: 1440px;
 
   /* --- Z-index --- */
   --z-base:  1;
@@ -142,4 +142,154 @@
   --shadow-lg:           0 8px 32px rgba(0,0,0,0.12);
   --shadow-amber:        0 0 20px rgba(176, 104, 32, 0.10);
   --shadow-amber-strong: 0 0 40px rgba(176, 104, 32, 0.18);
+}
+
+/* ============================================================
+   MATCHA SANCTUARY (Botanical Sage)
+   ============================================================ */
+[data-theme="matcha"] {
+  color-scheme: dark;
+
+  --color-bg:          #0e1411;
+  --color-surface:     #161e1a;
+  --color-surface-2:   #1d2722;
+  --color-surface-3:   #25322b;
+  --color-border:      #2d3e35;
+  --color-border-soft: #202c25;
+
+  --color-text-primary:   #e2ede7;
+  --color-text-secondary: #8dafa0;
+  --color-text-muted:     #577568;
+
+  --color-amber:        #68a67d;
+  --color-amber-glow:   #86c49c;
+  --color-amber-dim:    #477958;
+  --color-amber-subtle: rgba(104, 166, 125, 0.1);
+  --color-amber-muted:  rgba(104, 166, 125, 0.2);
+
+  --shadow-sm:           0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:           0 4px 16px rgba(0,0,0,0.55);
+  --shadow-lg:           0 8px 32px rgba(0,0,0,0.65);
+  --shadow-amber:        0 0 20px rgba(104, 166, 125, 0.15);
+  --shadow-amber-strong: 0 0 40px rgba(104, 166, 125, 0.25);
+}
+
+/* ============================================================
+   NORDIC TWILIGHT (Deep Sapphire & Indigo)
+   ============================================================ */
+[data-theme="twilight"] {
+  color-scheme: dark;
+
+  --color-bg:          #0b0f19;
+  --color-surface:     #131a2a;
+  --color-surface-2:   #1a243a;
+  --color-surface-3:   #232f4c;
+  --color-border:      #2b3a5d;
+  --color-border-soft: #1c2740;
+
+  --color-text-primary:   #e5edfb;
+  --color-text-secondary: #8e9ebb;
+  --color-text-muted:     #556482;
+
+  --color-amber:        #6366f1;
+  --color-amber-glow:   #818cf8;
+  --color-amber-dim:    #4338ca;
+  --color-amber-subtle: rgba(99, 102, 241, 0.1);
+  --color-amber-muted:  rgba(99, 102, 241, 0.2);
+
+  --shadow-sm:           0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:           0 4px 16px rgba(0,0,0,0.55);
+  --shadow-lg:           0 8px 32px rgba(0,0,0,0.65);
+  --shadow-amber:        0 0 20px rgba(99, 102, 241, 0.18);
+  --shadow-amber-strong: 0 0 40px rgba(99, 102, 241, 0.28);
+}
+
+/* ============================================================
+   ESPRESSO ROAST (Rich Cocoa & Caramel)
+   ============================================================ */
+[data-theme="espresso"] {
+  color-scheme: dark;
+
+  --color-bg:          #140f0c;
+  --color-surface:     #1e1713;
+  --color-surface-2:   #271f1a;
+  --color-surface-3:   #332822;
+  --color-border:      #45362e;
+  --color-border-soft: #2e231c;
+
+  --color-text-primary:   #f5ede6;
+  --color-text-secondary: #bba291;
+  --color-text-muted:     #7d6757;
+
+  --color-amber:        #d97706;
+  --color-amber-glow:   #f59e0b;
+  --color-amber-dim:    #92400e;
+  --color-amber-subtle: rgba(217, 119, 6, 0.1);
+  --color-amber-muted:  rgba(217, 119, 6, 0.2);
+
+  --shadow-sm:           0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:           0 4px 16px rgba(0,0,0,0.55);
+  --shadow-lg:           0 8px 32px rgba(0,0,0,0.65);
+  --shadow-amber:        0 0 20px rgba(217, 119, 6, 0.15);
+  --shadow-amber-strong: 0 0 40px rgba(217, 119, 6, 0.25);
+}
+
+/* ============================================================
+   ROSE VELVET (Muted Burgundy & Wine)
+   ============================================================ */
+[data-theme="rose"] {
+  color-scheme: dark;
+
+  --color-bg:          #150d12;
+  --color-surface:     #20141c;
+  --color-surface-2:   #2b1b26;
+  --color-surface-3:   #382332;
+  --color-border:      #4a2f42;
+  --color-border-soft: #311f2c;
+
+  --color-text-primary:   #fdeef6;
+  --color-text-secondary: #c49ba7;
+  --color-text-muted:     #845e6b;
+
+  --color-amber:        #e11d48;
+  --color-amber-glow:   #fb7185;
+  --color-amber-dim:    #9f1239;
+  --color-amber-subtle: rgba(225, 29, 72, 0.1);
+  --color-amber-muted:  rgba(225, 29, 72, 0.2);
+
+  --shadow-sm:           0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:           0 4px 16px rgba(0,0,0,0.55);
+  --shadow-lg:           0 8px 32px rgba(0,0,0,0.65);
+  --shadow-amber:        0 0 20px rgba(225, 29, 72, 0.15);
+  --shadow-amber-strong: 0 0 40px rgba(225, 29, 72, 0.25);
+}
+
+/* ============================================================
+   ONYX MINIMAL (AMOLED Pure Black & Gold)
+   ============================================================ */
+[data-theme="onyx"] {
+  color-scheme: dark;
+
+  --color-bg:          #000000;
+  --color-surface:     #0c0c0c;
+  --color-surface-2:   #161616;
+  --color-surface-3:   #222222;
+  --color-border:      #2c2c2c;
+  --color-border-soft: #191919;
+
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #a3a3a3;
+  --color-text-muted:     #5e5e5e;
+
+  --color-amber:        #eab308;
+  --color-amber-glow:   #fde047;
+  --color-amber-dim:    #a16207;
+  --color-amber-subtle: rgba(234, 179, 8, 0.1);
+  --color-amber-muted:  rgba(234, 179, 8, 0.2);
+
+  --shadow-sm:           0 1px 3px rgba(0,0,0,0.6);
+  --shadow-md:           0 4px 16px rgba(0,0,0,0.7);
+  --shadow-lg:           0 8px 32px rgba(0,0,0,0.85);
+  --shadow-amber:        0 0 20px rgba(234, 179, 8, 0.2);
+  --shadow-amber-strong: 0 0 40px rgba(234, 179, 8, 0.35);
 }

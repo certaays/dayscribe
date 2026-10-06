@@ -18,6 +18,10 @@ import {
   ArrowRight,
   Plus,
   Minus,
+  UserCheck,
+  ShieldAlert,
+  Link2,
+  Zap,
 } from '../components/icons/AppIcons';
 import './HomePage.css';
 
@@ -31,6 +35,8 @@ export function HomePage() {
     completedTodayCount,
     totalTodayCount,
     progressPercent: habitProgress,
+    totalIdentityVotesToday,
+    neverMissTwiceHabits,
     loading: hLoading,
   } = useHabits();
   const { getTodayEntry, entries } = useJournal();
@@ -63,15 +69,24 @@ export function HomePage() {
           </div>
         </div>
 
-        {streak > 0 && (
-          <div className="streak-badge">
-            <span className="streak-fire">
-              <Flame size={16} />
-            </span>
-            <span className="streak-count">{streak}</span>
-            <span className="streak-label">day streak</span>
-          </div>
-        )}
+        <div className="home-header-badges">
+          {totalIdentityVotesToday > 0 && (
+            <div className="identity-vote-pill" title="Identity votes cast today via Atomic Habits">
+              <UserCheck size={14} color="#38bdf8" />
+              <span><strong>{totalIdentityVotesToday}</strong> identity votes today</span>
+            </div>
+          )}
+
+          {streak > 0 && (
+            <div className="streak-badge">
+              <span className="streak-fire">
+                <Flame size={16} />
+              </span>
+              <span className="streak-count">{streak}</span>
+              <span className="streak-label">day streak</span>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Today's mood quick entry */}
@@ -94,6 +109,41 @@ export function HomePage() {
           })}
         </div>
       </section>
+
+      {/* Never Miss Twice Priority Comeback (Atomic Habits) */}
+      {neverMissTwiceHabits.length > 0 && (
+        <section className="home-nmt-priority animate-fadeInUp delay-1">
+          <div className="home-nmt-card">
+            <div className="home-nmt-icon-box">
+              <ShieldAlert size={20} />
+            </div>
+            <div className="home-nmt-info">
+              <span className="home-nmt-title">Never Miss Twice Comeback</span>
+              <span className="home-nmt-sub">
+                Protect your momentum on <strong>{neverMissTwiceHabits[0].title}</strong> today!
+              </span>
+            </div>
+            <div className="home-nmt-actions">
+              {neverMissTwiceHabits[0].twoMinuteRule ? (
+                <button
+                  className="home-nmt-btn two-min"
+                  onClick={() => toggleHabit(neverMissTwiceHabits[0].id, true)}
+                  title={`2-Min starter: ${neverMissTwiceHabits[0].twoMinuteRule}`}
+                >
+                  <Zap size={13} /> 2-Min Rule
+                </button>
+              ) : (
+                <button
+                  className="home-nmt-btn"
+                  onClick={() => toggleHabit(neverMissTwiceHabits[0].id)}
+                >
+                  <Check size={13} /> Complete
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Today's Habits Section */}
       <section className="home-habits-section animate-fadeInUp delay-2">
@@ -130,13 +180,25 @@ export function HomePage() {
               {todayHabits.map((habit) => (
                 <div
                   key={habit.id}
-                  className={`home-habit-card ${habit.completed ? 'completed' : ''}`}
+                  className={`home-habit-card ${habit.completed ? 'completed' : ''} ${habit.missedYesterday && !habit.completed ? 'home-missed-alert' : ''}`}
                 >
                   <span className="home-habit-emoji">
                     <HabitIcon icon={habit.emoji} size={20} />
                   </span>
                   <div className="home-habit-info">
-                    <span className="home-habit-title">{habit.title}</span>
+                    <div className="home-habit-topline">
+                      <span className="home-habit-title">{habit.title}</span>
+                      {habit.identity && (
+                        <span className="home-habit-id-tag" title={`Identity: ${habit.identity}`}>
+                          <UserCheck size={9} /> {habit.identity}
+                        </span>
+                      )}
+                    </div>
+                    {habit.stackTrigger && (
+                      <span className="home-stack-cue" title="Stack Cue">
+                        <Link2 size={10} /> {habit.stackTrigger}
+                      </span>
+                    )}
                     <span className="home-habit-sub">
                       {habit.targetType === 'count'
                         ? `${habit.currentCount}/${habit.targetCount} ${habit.unit || ''}`
@@ -146,25 +208,29 @@ export function HomePage() {
                   </div>
 
                   {habit.targetType === 'boolean' ? (
-                    <button
-                      className={`check-btn ${habit.completed ? 'checked' : ''}`}
-                      onClick={() => toggleHabit(habit.id)}
-                      aria-label={habit.completed ? 'Mark incomplete' : 'Mark complete'}
-                    >
-                      {habit.completed ? <Check size={14} strokeWidth={3} /> : null}
-                    </button>
+                    <div className="home-action-group">
+                      <button
+                        className={`check-btn ${habit.completed ? 'checked' : ''}`}
+                        onClick={() => toggleHabit(habit.id)}
+                        aria-label={habit.completed ? 'Mark incomplete' : 'Mark complete'}
+                      >
+                        {habit.completed ? <Check size={14} strokeWidth={3} /> : null}
+                      </button>
+                    </div>
                   ) : (
                     <div className="home-counter-actions">
                       <button
                         className="counter-btn-mini"
                         onClick={() => incrementCount(habit.id, -1)}
                         disabled={habit.currentCount <= 0}
+                        title="Subtract 1"
                       >
                         <Minus size={12} />
                       </button>
                       <button
                         className="counter-btn-mini plus"
                         onClick={() => incrementCount(habit.id, 1)}
+                        title="Add 1"
                       >
                         <Plus size={12} />
                       </button>
@@ -302,4 +368,5 @@ export function HomePage() {
     </div>
   );
 }
+
 

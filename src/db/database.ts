@@ -32,7 +32,25 @@ export interface ReminderLog {
   completedAt: Date;
 }
 
-export type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light' | 'matcha' | 'twilight' | 'espresso' | 'rose' | 'onyx' | 'custom';
+
+export interface CustomThemeColors {
+  bg: string;
+  surface: string;
+  surface2: string;
+  surface3: string;
+  border: string;
+  borderSoft: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  amber: string;
+  amberGlow: string;
+  amberDim: string;
+  isDark: boolean;
+}
+
+export type FontSizeScale = 'compact' | 'normal' | 'large';
 
 export interface Habit {
   id: string;
@@ -45,6 +63,11 @@ export interface Habit {
   repeatDays: number[];            // 0=Sun … 6=Sat
   isActive: boolean;
   createdAt: Date;
+  // Atomic Habits (James Clear) Blueprint Fields
+  identity?: string;               // e.g., "Mindful Reader", "Healthy & Energized Person"
+  stackTrigger?: string;           // e.g., "After I pour my morning tea ☕"
+  stackAfterHabitId?: string;      // ID of habit this stacks upon
+  twoMinuteRule?: string;          // e.g., "Read 1 single page", "Do 2 deep breaths"
 }
 
 export interface HabitLog {
@@ -54,6 +77,7 @@ export interface HabitLog {
   completed: boolean;
   currentCount: number;            // count completed on that day
   completedAt: Date;
+  isTwoMinuteVersion?: boolean;    // recorded via micro 2-minute rule
 }
 
 export interface AppSettings {
@@ -61,6 +85,11 @@ export interface AppSettings {
   displayName: string;
   notificationsEnabled: boolean;
   theme: Theme;
+  customThemeColors?: CustomThemeColors;
+  fontSerif?: string;
+  fontHand?: string;
+  fontUi?: string;
+  fontSizeScale?: FontSizeScale;
 }
 
 class DayScribeDatabase extends Dexie {
@@ -95,6 +124,24 @@ class DayScribeDatabase extends Dexie {
       habits:          'id, category, isActive, createdAt',
       habit_logs:      'id, habitId, date, [habitId+date]',
     });
+    // Version 4: Atomic Habits blueprint indexing
+    this.version(4).stores({
+      journal_entries: 'id, date, mood, createdAt',
+      reminders:       'id, time, isActive',
+      reminder_logs:   'id, reminderId, date',
+      app_settings:    'id',
+      habits:          'id, category, identity, isActive, createdAt',
+      habit_logs:      'id, habitId, date, [habitId+date]',
+    });
+    // Version 5: Custom theme palettes and typography settings
+    this.version(5).stores({
+      journal_entries: 'id, date, mood, createdAt',
+      reminders:       'id, time, isActive',
+      reminder_logs:   'id, reminderId, date',
+      app_settings:    'id',
+      habits:          'id, category, identity, isActive, createdAt',
+      habit_logs:      'id, habitId, date, [habitId+date]',
+    });
   }
 }
 
@@ -108,58 +155,74 @@ db.app_settings.get(1).then((settings) => {
       displayName: 'Friend',
       notificationsEnabled: false,
       theme: 'dark',
+      fontSerif: 'Libre Baskerville',
+      fontHand: 'Kalam',
+      fontUi: 'DM Sans',
+      fontSizeScale: 'normal',
     });
   }
 });
 
-// Seed default starter habits if none present
+// Seed default starter habits with Atomic Habits attributes
 db.habits.count().then(async (count) => {
   if (count === 0) {
     const defaultHabits: Habit[] = [
       {
         id: 'habit-water',
         title: 'Drink 8 Glasses of Water',
-        emoji: '💧',
+        emoji: 'water',
         category: 'Health',
         targetType: 'count',
         targetCount: 8,
         unit: 'glasses',
         repeatDays: [0, 1, 2, 3, 4, 5, 6],
         isActive: true,
+        identity: 'Healthy & Energized Person',
+        stackTrigger: 'After I wake up and stretch',
+        twoMinuteRule: 'Drink 1 fresh glass of water immediately',
         createdAt: new Date(),
       },
       {
         id: 'habit-reading',
-        title: 'Read a Book or Journal',
-        emoji: '📖',
+        title: 'Read a Book or Reflect',
+        emoji: 'reading',
         category: 'Growth',
         targetType: 'count',
         targetCount: 15,
         unit: 'mins',
         repeatDays: [0, 1, 2, 3, 4, 5, 6],
         isActive: true,
+        identity: 'Lifelong Learner',
+        stackTrigger: 'After drinking my morning tea / coffee ☕',
+        twoMinuteRule: 'Read 1 single page or paragraph',
         createdAt: new Date(),
       },
       {
         id: 'habit-mindfulness',
         title: 'Morning Mindfulness & Stretch',
-        emoji: '🧘',
+        emoji: 'mindfulness',
         category: 'Mind',
         targetType: 'boolean',
         targetCount: 1,
         repeatDays: [0, 1, 2, 3, 4, 5, 6],
         isActive: true,
+        identity: 'Calm & Grounded Thinker',
+        stackTrigger: 'After getting out of bed',
+        twoMinuteRule: 'Take 3 slow, deep conscious breaths',
         createdAt: new Date(),
       },
       {
         id: 'habit-walk',
         title: 'Outdoor Walk or Sunlight',
-        emoji: '🚶',
+        emoji: 'walk',
         category: 'Health',
         targetType: 'boolean',
         targetCount: 1,
         repeatDays: [0, 1, 2, 3, 4, 5, 6],
         isActive: true,
+        identity: 'Active & Mindful Walker',
+        stackTrigger: 'After finishing afternoon work',
+        twoMinuteRule: 'Step outside into the fresh air for 2 minutes',
         createdAt: new Date(),
       },
     ];

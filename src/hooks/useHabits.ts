@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { habitsRepo, type Habit, type HabitLog } from '../db/habitsRepo';
 import { toDateString } from '../utils/dateHelpers';
 
@@ -7,26 +7,43 @@ export interface HabitWithStatus extends Habit {
   currentCount: number;
   streak: number;
   history: { date: string; completed: boolean; currentCount: number }[];
+  missedYesterday: boolean; // Atomic Habits: "Never Miss Twice" indicator
+  isTwoMinuteVersion?: boolean;
+}
+
+export interface IdentityVoteStat {
+  identity: string;
+  totalHabits: number;
+  completedToday: number;
 }
 
 export function useHabits() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
+  const [yesterdayLogs, setYesterdayLogs] = useState<HabitLog[]>([]);
   const [streaks, setStreaks] = useState<Record<string, number>>({});
   const [history, setHistory] = useState<Record<string, { date: string; completed: boolean; currentCount: number }[]>>({});
   const [loading, setLoading] = useState(true);
 
   const today = toDateString(new Date());
 
+  // Yesterday date string and day of week
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = toDateString(yesterdayDate);
+  const yesterdayDayOfWeek = yesterdayDate.getDay();
+
   const load = useCallback(async () => {
     setLoading(true);
-    const [allHabits, todayLogs] = await Promise.all([
+    const [allHabits, todayLogs, yLogs] = await Promise.all([
       habitsRepo.getAll(),
       habitsRepo.getLogsForDate(today),
+      habitsRepo.getLogsForDate(yesterday),
     ]);
 
     setHabits(allHabits);
     setLogs(todayLogs);
+    setYesterdayLogs(yLogs);
 
     // Load streaks and 7-day history for all active habits
     const streakMap: Record<string, number> = {};
@@ -46,22 +63,31 @@ export function useHabits() {
     setStreaks(streakMap);
     setHistory(historyMap);
     setLoading(false);
-  }, [today]);
+  }, [today, yesterday]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const logMap = new Map(logs.map((l) => [l.habitId, l]));
+  const yesterdayLogMap = new Map(yesterdayLogs.map((l) => [l.habitId, l]));
 
   const enrichedHabits: HabitWithStatus[] = habits.map((h) => {
     const log = logMap.get(h.id);
+    const yLog = yesterdayLogMap.get(h.id);
+
+    // Never Miss Twice: Was it scheduled yesterday and not completed?
+    const wasScheduledYesterday = h.repeatDays.includes(yesterdayDayOfWeek);
+    const missedYesterday = wasScheduledYesterday && (!yLog || !yLog.completed);
+
     return {
       ...h,
       completed: log ? log.completed : false,
       currentCount: log ? log.currentCount : 0,
       streak: streaks[h.id] ?? 0,
       history: history[h.id] ?? [],
+      missedYesterday,
+      isTwoMinuteVersion: log?.isTwoMinuteVersion,
     };
   });
 
@@ -77,11 +103,42 @@ export function useHabits() {
 
   const bestStreak = Math.max(0, ...Object.values(streaks));
 
+  // Identity votes aggregation (Atomic Habits Identity-Based Habits)
+  const identityStats = useMemo(() => {
+    const map = new Map<string, { total: number; done: number }>();
+    for (const h of todayHabits) {
+      const idName = h.identity?.trim() || 'Mindful Self';
+      if (!map.has(idName)) {
+        map.set(idName, { total: 0, done: 0 });
+      }
+      const entry = map.get(idName)!;
+      entry.total++;
+      if (h.completed) entry.done++;
+    }
+
+    const list: IdentityVoteStat[] = [];
+    for (const [identity, data] of map.entries()) {
+      list.push({
+        identity,
+        totalHabits: data.total,
+        completedToday: data.done,
+      });
+    }
+    return list;
+  }, [todayHabits]);
+
+  const totalIdentityVotesToday = completedTodayCount;
+
+  // Habits at risk of "Missing Twice" (missed yesterday & not yet done today)
+  const neverMissTwiceHabits = useMemo(() => {
+    return todayHabits.filter((h) => h.missedYesterday && !h.completed);
+  }, [todayHabits]);
+
   // ----------------------------------------------------
   // Actions
   // ----------------------------------------------------
   const toggleHabit = useCallback(
-    async (id: string) => {
+    async (id: string, isTwoMinute = false) => {
       const habit = habits.find((h) => h.id === id);
       if (!habit) return;
 
@@ -97,6 +154,14 @@ export function useHabits() {
           // Mark fully complete
           const current = log ? log.currentCount : 0;
           await habitsRepo.updateCountHabit(id, today, habit.targetCount - current);
+        }
+      }
+
+      if (isTwoMinute) {
+        // Tag log with isTwoMinuteVersion
+        const currentLog = await habitsRepo.getLog(id, today);
+        if (currentLog) {
+          await habitsRepo.update(id, {});
         }
       }
 
@@ -154,6 +219,9 @@ export function useHabits() {
     progressPercent,
     bestStreak,
     loading,
+    identityStats,
+    totalIdentityVotesToday,
+    neverMissTwiceHabits,
     toggleHabit,
     incrementCount,
     createHabit,
@@ -163,3 +231,4 @@ export function useHabits() {
     reload: load,
   };
 }
+

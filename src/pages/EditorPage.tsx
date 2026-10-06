@@ -2,10 +2,31 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useJournal } from '../hooks/useJournal';
 import { formatDate, toDateString, MOODS } from '../utils/dateHelpers';
-import { MoodIcon, Check, ArrowLeft, X } from '../components/icons/AppIcons';
+import { MoodIcon, Check, ArrowLeft, X, Sparkles, UserCheck, Zap } from '../components/icons/AppIcons';
 import './EditorPage.css';
 
 const AUTO_SAVE_MS = 30_000;
+
+const ATOMIC_PROMPTS = [
+  {
+    id: 'win',
+    label: '1% Win',
+    icon: Sparkles,
+    template: '\n\n**🌟 1% Better Daily Win**\n- What small win or 1% improvement did I achieve today?\n',
+  },
+  {
+    id: 'identity',
+    label: 'Identity Vote',
+    icon: UserCheck,
+    template: '\n\n**👤 Identity Vote Cast**\n- Who did my actions prove I was becoming today?\n',
+  },
+  {
+    id: 'cue',
+    label: 'Habit Cue Review',
+    icon: Zap,
+    template: '\n\n**⚡ Habit Cue & Friction Review**\n- What cue made good habits easy, or what friction caused a slip-up?\n',
+  },
+];
 
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +46,13 @@ export function EditorPage() {
   const [entryId, setEntryId] = useState<string | null>(isNew ? null : (id ?? null));
   const [saveAnim, setSaveAnim] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const insertPrompt = (template: string) => {
+    setContent((prev) => {
+      const trimmed = prev.trimEnd();
+      return trimmed ? `${trimmed}${template}` : template.trimStart();
+    });
+  };
 
   const today = toDateString(new Date());
   const entryDate = existing?.date ?? today;
@@ -90,19 +118,40 @@ export function EditorPage() {
           </div>
         </div>
 
-        {/* Mood picker */}
-        <div className="mood-picker">
-          {MOODS.map((m) => (
-            <button
-              key={m.emoji}
-              className={`mood-opt ${mood === m.emoji ? 'selected' : ''}`}
-              onClick={() => setMood(mood === m.emoji ? '' : m.emoji)}
-              title={m.label}
-              style={{ '--mood-color': m.color } as React.CSSProperties}
-            >
-              <MoodIcon mood={m.emoji} size={20} />
-            </button>
-          ))}
+        {/* Mood picker and Atomic Prompts row */}
+        <div className="editor-toolbar-row">
+          <div className="mood-picker">
+            {MOODS.map((m) => (
+              <button
+                key={m.emoji}
+                className={`mood-opt ${mood === m.emoji ? 'selected' : ''}`}
+                onClick={() => setMood(mood === m.emoji ? '' : m.emoji)}
+                title={m.label}
+                style={{ '--mood-color': m.color } as React.CSSProperties}
+              >
+                <MoodIcon mood={m.emoji} size={20} />
+              </button>
+            ))}
+          </div>
+
+          <div className="atomic-prompts-bar">
+            <span className="atomic-prompts-label">Atomic Prompts:</span>
+            {ATOMIC_PROMPTS.map((prompt) => {
+              const Icon = prompt.icon;
+              return (
+                <button
+                  key={prompt.id}
+                  type="button"
+                  className="atomic-prompt-btn"
+                  onClick={() => insertPrompt(prompt.template)}
+                  title={`Insert ${prompt.label} template`}
+                >
+                  <Icon size={12} />
+                  <span>{prompt.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

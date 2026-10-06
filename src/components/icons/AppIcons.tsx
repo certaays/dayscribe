@@ -43,6 +43,17 @@ import {
   Smartphone,
   Tag,
   X,
+  ShieldAlert,
+  Link2,
+  UserCheck,
+  Compass,
+  Layers,
+  TrendingUp,
+  Sparkle,
+  Type,
+  RotateCcw,
+  Sliders,
+  Eye,
   type LucideProps,
 } from 'lucide-react';
 
@@ -91,7 +102,41 @@ export {
   Smartphone,
   Tag,
   X,
+  ShieldAlert,
+  Link2,
+  UserCheck,
+  Compass,
+  Layers,
+  TrendingUp,
+  Sparkle,
+  Type,
+  RotateCcw,
+  Sliders,
+  Eye,
+  type LucideProps,
 };
+
+// Preset Identity inspirations from Atomic Habits
+export const IDENTITY_PRESETS = [
+  'Mindful Thinker',
+  'Healthy & Energized',
+  'Lifelong Learner',
+  'Focused Creator',
+  'Active Athlete',
+  'Calm & Grounded',
+  'Organized Self',
+];
+
+// Preset Habit Stacking trigger examples (Formula: After [Current Habit], I will...)
+export const STACK_TRIGGER_PRESETS = [
+  'After I wake up and get out of bed',
+  'After I brush my teeth in the morning',
+  'After I pour my morning coffee / tea ☕',
+  'After I sit down at my desk',
+  'After I finish lunch',
+  'After I shut down my computer for the day',
+  'After I get into bed at night',
+];
 
 // Preset habit icons for selection in Habit Modal
 export const HABIT_ICON_PRESETS = [
