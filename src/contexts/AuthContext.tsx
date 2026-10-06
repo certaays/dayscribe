@@ -30,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const syncTimeoutRef = useRef<any>(null);
+  const isSyncingRef = useRef<boolean>(false);
 
   // Synchronize local database with VPS database
   const triggerSync = useCallback(async (): Promise<SyncResult | null> => {
@@ -42,7 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
 
+    if (isSyncingRef.current) {
+      return null; // Avoid overlapping sync requests
+    }
+
     try {
+      isSyncingRef.current = true;
       setSyncState('syncing');
       setSyncError(null);
 
@@ -69,51 +75,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const serverRes = await apiClient.bulkSync(payload);
       const serverData = (serverRes as any)?.data || serverRes;
 
-      // Merge server response back into Dexie
-      if (serverData?.journalEntries && Array.isArray(serverData.journalEntries)) {
-        await db.journal_entries.bulkPut(
-          serverData.journalEntries.map((e: any) => ({
-            ...e,
-            createdAt: new Date(e.createdAt),
-            updatedAt: new Date(e.updatedAt),
-          }))
-        );
+      // Synchronize Dexie with full authoritative server snapshot
+      if (serverData && Array.isArray(serverData.journalEntries)) {
+        await db.journal_entries.clear();
+        if (serverData.journalEntries.length > 0) {
+          await db.journal_entries.bulkPut(
+            serverData.journalEntries.map((e: any) => ({
+              ...e,
+              createdAt: new Date(e.createdAt),
+              updatedAt: new Date(e.updatedAt),
+            }))
+          );
+        }
       }
 
-      if (serverData?.habits && Array.isArray(serverData.habits)) {
-        await db.habits.bulkPut(
-          serverData.habits.map((h: any) => ({
-            ...h,
-            createdAt: new Date(h.createdAt),
-          }))
-        );
+      if (serverData && Array.isArray(serverData.habits)) {
+        await db.habits.clear();
+        if (serverData.habits.length > 0) {
+          await db.habits.bulkPut(
+            serverData.habits.map((h: any) => ({
+              ...h,
+              createdAt: new Date(h.createdAt),
+            }))
+          );
+        }
       }
 
-      if (serverData?.habitLogs && Array.isArray(serverData.habitLogs)) {
-        await db.habit_logs.bulkPut(
-          serverData.habitLogs.map((l: any) => ({
-            ...l,
-            completedAt: new Date(l.completedAt),
-          }))
-        );
+      if (serverData && Array.isArray(serverData.habitLogs)) {
+        await db.habit_logs.clear();
+        if (serverData.habitLogs.length > 0) {
+          await db.habit_logs.bulkPut(
+            serverData.habitLogs.map((l: any) => ({
+              ...l,
+              completedAt: new Date(l.completedAt),
+            }))
+          );
+        }
       }
 
-      if (serverData?.reminders && Array.isArray(serverData.reminders)) {
-        await db.reminders.bulkPut(
-          serverData.reminders.map((r: any) => ({
-            ...r,
-            createdAt: new Date(r.createdAt),
-          }))
-        );
+      if (serverData && Array.isArray(serverData.reminders)) {
+        await db.reminders.clear();
+        if (serverData.reminders.length > 0) {
+          await db.reminders.bulkPut(
+            serverData.reminders.map((r: any) => ({
+              ...r,
+              createdAt: new Date(r.createdAt),
+            }))
+          );
+        }
       }
 
-      if (serverData?.reminderLogs && Array.isArray(serverData.reminderLogs)) {
-        await db.reminder_logs.bulkPut(
-          serverData.reminderLogs.map((rl: any) => ({
-            ...rl,
-            completedAt: new Date(rl.completedAt),
-          }))
-        );
+      if (serverData && Array.isArray(serverData.reminderLogs)) {
+        await db.reminder_logs.clear();
+        if (serverData.reminderLogs.length > 0) {
+          await db.reminder_logs.bulkPut(
+            serverData.reminderLogs.map((rl: any) => ({
+              ...rl,
+              completedAt: new Date(rl.completedAt),
+            }))
+          );
+        }
       }
 
       if (serverData?.settings) {
@@ -133,10 +154,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSyncState('error');
       setSyncError(err.message || 'Sync failed');
       return null;
+    } finally {
+      isSyncingRef.current = false;
     }
   }, []);
 
-  // Check existing token on initial load
+  // Check existing token on initial load & Setup realtime sync triggers
   useEffect(() => {
     async function initAuth() {
       if (apiClient.isAuthenticated()) {
@@ -165,24 +188,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Auto-sync when data changes in repos
+    // 1. Auto-sync immediately when local data changes
     const handleDataChanged = () => {
       if (apiClient.isAuthenticated()) {
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
         syncTimeoutRef.current = setTimeout(() => {
           triggerSync();
-        }, 800);
+        }, 150); // Fast 150ms debounce
       }
     };
+
+    // 2. Realtime auto-sync when window is focused or tab becomes visible
+    const handleWindowFocus = () => {
+      if (apiClient.isAuthenticated() && document.visibilityState === 'visible') {
+        triggerSync();
+      }
+    };
+
+    // 3. Periodic background heartbeat sync (every 6 seconds) for seamless live cross-device sync
+    const pollInterval = setInterval(() => {
+      if (apiClient.isAuthenticated() && document.visibilityState === 'visible') {
+        triggerSync();
+      }
+    }, 6000);
 
     window.addEventListener('dayscribe_auth_expired', handleAuthExpired);
     window.addEventListener('online', handleOnline);
     window.addEventListener('dayscribe_data_changed', handleDataChanged);
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleWindowFocus);
 
     return () => {
       window.removeEventListener('dayscribe_auth_expired', handleAuthExpired);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('dayscribe_data_changed', handleDataChanged);
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleWindowFocus);
+      clearInterval(pollInterval);
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     };
   }, [triggerSync]);
@@ -193,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await apiClient.login(email, password);
       setUser(res.user);
       setIsAuthModalOpen(false);
-      // Clean local cache first so device B only receives user A's cloud data
+      // Clear previous local cache before downloading cloud user data
       await Promise.all([
         db.journal_entries.clear(),
         db.habits.clear(),
@@ -201,7 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         db.reminders.clear(),
         db.reminder_logs.clear(),
       ]);
-      // Pull fresh data for this account from server
+      // Pull fresh data for this account from server immediately
       await triggerSync();
     } finally {
       setIsLoading(false);
