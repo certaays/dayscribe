@@ -4,6 +4,12 @@ import { toDateString } from '../utils/dateHelpers';
 
 export type { Habit, HabitLog };
 
+function notifyChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dayscribe_data_changed'));
+  }
+}
+
 export const habitsRepo = {
   async getAll(): Promise<Habit[]> {
     return db.habits.toArray();
@@ -24,11 +30,13 @@ export const habitsRepo = {
       createdAt: new Date(),
     };
     await db.habits.add(habit);
+    notifyChange();
     return habit;
   },
 
   async update(id: string, data: Partial<Omit<Habit, 'id' | 'createdAt'>>): Promise<void> {
     await db.habits.update(id, data);
+    notifyChange();
   },
 
   async delete(id: string): Promise<void> {
@@ -36,12 +44,14 @@ export const habitsRepo = {
       await db.habits.delete(id);
       await db.habit_logs.where('habitId').equals(id).delete();
     });
+    notifyChange();
   },
 
   async toggleActive(id: string): Promise<void> {
     const habit = await db.habits.get(id);
     if (habit) {
       await db.habits.update(id, { isActive: !habit.isActive });
+      notifyChange();
     }
   },
 
@@ -86,6 +96,7 @@ export const habitsRepo = {
       };
       await db.habit_logs.add(log);
     }
+    notifyChange();
   },
 
   async updateCountHabit(habitId: string, dateStr: string, delta: number): Promise<number> {
@@ -119,6 +130,7 @@ export const habitsRepo = {
       await db.habit_logs.add(log);
     }
 
+    notifyChange();
     return nextCount;
   },
 

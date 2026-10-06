@@ -2,6 +2,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { db, type JournalEntry } from './database';
 export type { JournalEntry };
 
+function notifyChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dayscribe_data_changed'));
+  }
+}
+
 export const journalRepo = {
   async getAll(): Promise<JournalEntry[]> {
     return db.journal_entries.orderBy('date').reverse().toArray();
@@ -28,15 +34,18 @@ export const journalRepo = {
       updatedAt: new Date(),
     };
     await db.journal_entries.add(entry);
+    notifyChange();
     return entry;
   },
 
   async update(id: string, data: Partial<Omit<JournalEntry, 'id' | 'createdAt'>>): Promise<void> {
     await db.journal_entries.update(id, { ...data, updatedAt: new Date() });
+    notifyChange();
   },
 
   async delete(id: string): Promise<void> {
     await db.journal_entries.delete(id);
+    notifyChange();
   },
 
   async getRecent(limit = 3): Promise<JournalEntry[]> {

@@ -1,6 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db, type Reminder, type ReminderLog } from './database';
 
+function notifyChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dayscribe_data_changed'));
+  }
+}
+
 export const remindersRepo = {
   async getAll(): Promise<Reminder[]> {
     return db.reminders.orderBy('time').toArray();
@@ -17,21 +23,25 @@ export const remindersRepo = {
       createdAt: new Date(),
     };
     await db.reminders.add(reminder);
+    notifyChange();
     return reminder;
   },
 
   async update(id: string, data: Partial<Omit<Reminder, 'id' | 'createdAt'>>): Promise<void> {
     await db.reminders.update(id, data);
+    notifyChange();
   },
 
   async delete(id: string): Promise<void> {
     await db.reminders.delete(id);
+    notifyChange();
   },
 
   async toggleActive(id: string): Promise<void> {
     const reminder = await db.reminders.get(id);
     if (reminder) {
       await db.reminders.update(id, { isActive: !reminder.isActive });
+      notifyChange();
     }
   },
 
@@ -49,6 +59,7 @@ export const remindersRepo = {
         completedAt: new Date(),
       };
       await db.reminder_logs.add(log);
+      notifyChange();
     }
   },
 
@@ -57,6 +68,7 @@ export const remindersRepo = {
       .where('reminderId').equals(reminderId)
       .and((log) => log.date === date)
       .delete();
+    notifyChange();
   },
 
   async getCompletedForDate(date: string): Promise<string[]> {

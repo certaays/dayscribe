@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient, type AuthUser, type SyncResult } from '../services/apiClient';
 import { db } from '../db/database';
 
@@ -29,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const syncTimeoutRef = useRef<any>(null);
 
   // Synchronize local database with VPS database
   const triggerSync = useCallback(async (): Promise<SyncResult | null> => {
@@ -65,12 +66,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         settings: localSettings,
       };
 
-      const serverData = await apiClient.bulkSync(payload);
+      const serverRes = await apiClient.bulkSync(payload);
+      const serverData = (serverRes as any)?.data || serverRes;
 
       // Merge server response back into Dexie
-      if (serverData.journalEntries && serverData.journalEntries.length > 0) {
+      if (serverData?.journalEntries && Array.isArray(serverData.journalEntries)) {
         await db.journal_entries.bulkPut(
-          serverData.journalEntries.map((e) => ({
+          serverData.journalEntries.map((e: any) => ({
             ...e,
             createdAt: new Date(e.createdAt),
             updatedAt: new Date(e.updatedAt),
@@ -78,50 +80,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       }
 
-      if (serverData.habits && serverData.habits.length > 0) {
+      if (serverData?.habits && Array.isArray(serverData.habits)) {
         await db.habits.bulkPut(
-          serverData.habits.map((h) => ({
+          serverData.habits.map((h: any) => ({
             ...h,
             createdAt: new Date(h.createdAt),
           }))
         );
       }
 
-      if (serverData.habitLogs && serverData.habitLogs.length > 0) {
+      if (serverData?.habitLogs && Array.isArray(serverData.habitLogs)) {
         await db.habit_logs.bulkPut(
-          serverData.habitLogs.map((l) => ({
+          serverData.habitLogs.map((l: any) => ({
             ...l,
             completedAt: new Date(l.completedAt),
           }))
         );
       }
 
-      if (serverData.reminders && serverData.reminders.length > 0) {
+      if (serverData?.reminders && Array.isArray(serverData.reminders)) {
         await db.reminders.bulkPut(
-          serverData.reminders.map((r) => ({
+          serverData.reminders.map((r: any) => ({
             ...r,
             createdAt: new Date(r.createdAt),
           }))
         );
       }
 
-      if (serverData.reminderLogs && serverData.reminderLogs.length > 0) {
+      if (serverData?.reminderLogs && Array.isArray(serverData.reminderLogs)) {
         await db.reminder_logs.bulkPut(
-          serverData.reminderLogs.map((rl) => ({
+          serverData.reminderLogs.map((rl: any) => ({
             ...rl,
             completedAt: new Date(rl.completedAt),
           }))
         );
       }
 
-      if (serverData.settings) {
+      if (serverData?.settings) {
         await db.app_settings.put({
           ...serverData.settings,
           id: 1,
         });
       }
 
-      const syncTime = new Date(serverData.syncedAt || Date.now());
+      const syncTime = new Date((serverRes as any)?.syncedAt || Date.now());
       setLastSyncedAt(syncTime);
       setSyncState('synced');
 
@@ -163,12 +165,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Auto-sync when data changes in repos
+    const handleDataChanged = () => {
+      if (apiClient.isAuthenticated()) {
+        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = setTimeout(() => {
+          triggerSync();
+        }, 800);
+      }
+    };
+
     window.addEventListener('dayscribe_auth_expired', handleAuthExpired);
     window.addEventListener('online', handleOnline);
+    window.addEventListener('dayscribe_data_changed', handleDataChanged);
 
     return () => {
       window.removeEventListener('dayscribe_auth_expired', handleAuthExpired);
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('dayscribe_data_changed', handleDataChanged);
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     };
   }, [triggerSync]);
 
@@ -178,7 +193,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await apiClient.login(email, password);
       setUser(res.user);
       setIsAuthModalOpen(false);
-      // Fetch fresh data for this account from server
+      // Clean local cache first so device B only receives user A's cloud data
+      await Promise.all([
+        db.journal_entries.clear(),
+        db.habits.clear(),
+        db.habit_logs.clear(),
+        db.reminders.clear(),
+        db.reminder_logs.clear(),
+      ]);
+      // Pull fresh data for this account from server
       await triggerSync();
     } finally {
       setIsLoading(false);
