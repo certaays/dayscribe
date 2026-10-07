@@ -52,8 +52,46 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
+import http from 'http';
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(','),
+    credentials: true,
+  },
+});
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication error'));
+  }
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
+    socket.data.userId = decoded.userId;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error'));
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id}, User: ${socket.data.userId}`);
+  socket.join(socket.data.userId);
+
+  socket.on('disconnect', () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+  });
+});
+
+app.locals.io = io;
+
 // Start Server
-app.listen(config.port, () => {
+server.listen(config.port, () => {
   console.log(`🕯️ DayScribe server running on port ${config.port} (${config.nodeEnv})`);
   console.log(`🚀 API endpoint: http://localhost:${config.port}/api`);
 });

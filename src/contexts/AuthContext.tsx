@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient, type AuthUser, type SyncResult } from '../services/apiClient';
 import { db } from '../db/database';
+import { io, Socket } from 'socket.io-client';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
 
@@ -208,12 +209,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // 3. Periodic background heartbeat sync (every 6 seconds) for seamless live cross-device sync
-    const pollInterval = setInterval(() => {
-      if (apiClient.isAuthenticated() && document.visibilityState === 'visible') {
+    // 3. Setup Socket.io for true real-time updates
+    let socket: Socket | null = null;
+    if (apiClient.isAuthenticated()) {
+      const token = apiClient.getToken();
+      const envUrl = import.meta.env.VITE_API_URL;
+      const baseUrl = envUrl || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin);
+      
+      socket = io(baseUrl, {
+        auth: { token },
+      });
+
+      socket.on('connect', () => {
+        console.log('Socket connected for real-time sync');
+      });
+
+      socket.on('sync_updated', () => {
+        console.log('Received sync_updated from server, pulling data...');
         triggerSync();
-      }
-    }, 6000);
+      });
+    }
 
     window.addEventListener('dayscribe_auth_expired', handleAuthExpired);
     window.addEventListener('online', handleOnline);
@@ -227,7 +242,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.removeEventListener('dayscribe_data_changed', handleDataChanged);
       window.removeEventListener('focus', handleWindowFocus);
       document.removeEventListener('visibilitychange', handleWindowFocus);
-      clearInterval(pollInterval);
+      if (socket) {
+        socket.disconnect();
+      }
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     };
   }, [triggerSync]);

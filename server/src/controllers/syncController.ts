@@ -198,33 +198,42 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
         prisma.userSettings.findUnique({ where: { userId } }),
       ]);
 
+    const responseData = {
+      journalEntries: allEntries.map((e) => ({
+        ...e,
+        tags: JSON.parse(e.tags || '[]'),
+      })),
+      habits: allHabits.map((h) => ({
+        ...h,
+        repeatDays: JSON.parse(h.repeatDays || '[0,1,2,3,4,5,6]'),
+      })),
+      habitLogs: allHabitLogs,
+      reminders: allReminders.map((r) => ({
+        ...r,
+        repeatDays: JSON.parse(r.repeatDays || '[0,1,2,3,4,5,6]'),
+      })),
+      reminderLogs: allReminderLogs,
+      settings: userSettings
+        ? {
+            ...userSettings,
+            customThemeColors: userSettings.customThemeColors
+              ? JSON.parse(userSettings.customThemeColors)
+              : undefined,
+          }
+        : undefined,
+    };
+
+    // Emit event to other devices in the same user room
+    const io = req.app.locals.io;
+    if (io) {
+      // We pass some identifier or just signal to fetch
+      io.to(userId).emit('sync_updated', { syncedAt: new Date().toISOString() });
+    }
+
     res.json({
       success: true,
       syncedAt: new Date().toISOString(),
-      data: {
-        journalEntries: allEntries.map((e) => ({
-          ...e,
-          tags: JSON.parse(e.tags || '[]'),
-        })),
-        habits: allHabits.map((h) => ({
-          ...h,
-          repeatDays: JSON.parse(h.repeatDays || '[0,1,2,3,4,5,6]'),
-        })),
-        habitLogs: allHabitLogs,
-        reminders: allReminders.map((r) => ({
-          ...r,
-          repeatDays: JSON.parse(r.repeatDays || '[0,1,2,3,4,5,6]'),
-        })),
-        reminderLogs: allReminderLogs,
-        settings: userSettings
-          ? {
-              ...userSettings,
-              customThemeColors: userSettings.customThemeColors
-                ? JSON.parse(userSettings.customThemeColors)
-                : undefined,
-            }
-          : undefined,
-      },
+      data: responseData,
     });
   } catch (err) {
     console.error('Bulk sync error:', err);
