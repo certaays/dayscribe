@@ -12,6 +12,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
       reminders = [],
       reminderLogs = [],
       settings,
+      clientId,
     } = req.body;
 
     // 1. Process client pushed data (upsert)
@@ -226,8 +227,8 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
     // Emit event to other devices in the same user room
     const io = req.app.locals.io;
     if (io) {
-      // We pass some identifier or just signal to fetch
-      io.to(userId).emit('sync_updated', { syncedAt: new Date().toISOString() });
+      // We pass the clientId so the sender knows to ignore it
+      io.to(userId).emit('sync_updated', { syncedAt: new Date().toISOString(), clientId });
     }
 
     res.json({

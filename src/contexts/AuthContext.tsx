@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const syncTimeoutRef = useRef<any>(null);
   const isSyncingRef = useRef<boolean>(false);
+  const clientIdRef = useRef<string>(Math.random().toString(36).substring(2, 15));
 
   // Synchronize local database with VPS database
   const triggerSync = useCallback(async (): Promise<SyncResult | null> => {
@@ -71,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         reminders: localReminders,
         reminderLogs: localReminderLogs,
         settings: localSettings,
+        clientId: clientIdRef.current,
       };
 
       const serverRes = await apiClient.bulkSync(payload);
@@ -224,7 +226,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Socket connected for real-time sync');
       });
 
-      socket.on('sync_updated', () => {
+      socket.on('sync_updated', (data: any) => {
+        if (data?.clientId === clientIdRef.current) {
+          // Ignore our own sync events to prevent infinite loop
+          return;
+        }
         console.log('Received sync_updated from server, pulling data...');
         triggerSync();
       });
