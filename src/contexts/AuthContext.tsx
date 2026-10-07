@@ -148,6 +148,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLastSyncedAt(syncTime);
       setSyncState('synced');
 
+      // Notify all active hooks and UI components that data has updated
+      window.dispatchEvent(new CustomEvent('dayscribe_sync_completed', { detail: serverData }));
+
       return serverData;
     } catch (err: any) {
       console.error('Account sync error:', err);

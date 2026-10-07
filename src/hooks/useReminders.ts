@@ -26,6 +26,18 @@ export function useReminders() {
 
   useEffect(() => {
     load();
+
+    const handleSync = () => {
+      load();
+    };
+
+    window.addEventListener('dayscribe_sync_completed', handleSync);
+    window.addEventListener('dayscribe_data_changed', handleSync);
+
+    return () => {
+      window.removeEventListener('dayscribe_sync_completed', handleSync);
+      window.removeEventListener('dayscribe_data_changed', handleSync);
+    };
   }, [load]);
 
   const createReminder = useCallback(

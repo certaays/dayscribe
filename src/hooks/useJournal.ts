@@ -7,7 +7,6 @@ export function useJournal() {
   const [loading, setLoading] = useState(true);
 
   const loadEntries = useCallback(async () => {
-    setLoading(true);
     const all = await journalRepo.getAll();
     setEntries(all);
     setLoading(false);
@@ -15,6 +14,18 @@ export function useJournal() {
 
   useEffect(() => {
     loadEntries();
+
+    const handleSync = () => {
+      loadEntries();
+    };
+
+    window.addEventListener('dayscribe_sync_completed', handleSync);
+    window.addEventListener('dayscribe_data_changed', handleSync);
+
+    return () => {
+      window.removeEventListener('dayscribe_sync_completed', handleSync);
+      window.removeEventListener('dayscribe_data_changed', handleSync);
+    };
   }, [loadEntries]);
 
   const createEntry = useCallback(
