@@ -102,6 +102,7 @@ model ReminderLog {
   userId      String
   reminderId  String
   date        String   // "YYYY-MM-DD"
+  completed   Boolean  @default(true)
   completedAt DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

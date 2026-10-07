@@ -75,8 +75,12 @@ export const habitsRepo = {
 
     const existing = await habitsRepo.getLog(habitId, dateStr);
     if (existing && existing.completed) {
-      // Toggle off
-      await db.habit_logs.delete(existing.id);
+      // Toggle off (soft delete for sync)
+      await db.habit_logs.update(existing.id, {
+        completed: false,
+        currentCount: 0,
+        completedAt: new Date(),
+      });
     } else if (existing) {
       // Toggle on
       await db.habit_logs.update(existing.id, {
@@ -110,7 +114,12 @@ export const habitsRepo = {
 
     if (existing) {
       if (nextCount === 0) {
-        await db.habit_logs.delete(existing.id);
+        // Soft delete
+        await db.habit_logs.update(existing.id, {
+          currentCount: 0,
+          completed: false,
+          completedAt: new Date(),
+        });
       } else {
         await db.habit_logs.update(existing.id, {
           currentCount: nextCount,

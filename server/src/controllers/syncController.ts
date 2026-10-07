@@ -151,6 +151,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             },
           },
           update: {
+            completed: log.completed !== undefined ? log.completed : true,
             completedAt: new Date(),
           },
           create: {
@@ -158,6 +159,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             userId,
             reminderId: log.reminderId,
             date: log.date,
+            completed: log.completed !== undefined ? log.completed : true,
           },
         });
       }

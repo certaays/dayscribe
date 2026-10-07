@@ -29,6 +29,7 @@ export interface ReminderLog {
   id: string;
   reminderId: string;
   date: string;       // "YYYY-MM-DD"
+  completed?: boolean;
   completedAt: Date;
 }
 

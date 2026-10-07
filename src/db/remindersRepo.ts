@@ -56,6 +56,7 @@ export const remindersRepo = {
         id: uuidv4(),
         reminderId,
         date,
+        completed: true,
         completedAt: new Date(),
       };
       await db.reminder_logs.add(log);
@@ -64,16 +65,22 @@ export const remindersRepo = {
   },
 
   async removeCompletion(reminderId: string, date: string): Promise<void> {
-    await db.reminder_logs
+    const existing = await db.reminder_logs
       .where('reminderId').equals(reminderId)
       .and((log) => log.date === date)
-      .delete();
+      .first();
+    if (existing) {
+      await db.reminder_logs.update(existing.id, {
+        completed: false,
+        completedAt: new Date(),
+      });
+    }
     notifyChange();
   },
 
   async getCompletedForDate(date: string): Promise<string[]> {
     const logs = await db.reminder_logs.where('date').equals(date).toArray();
-    return logs.map((l) => l.reminderId);
+    return logs.filter(l => l.completed !== false).map((l) => l.reminderId);
   },
 
   async getStreak(): Promise<number> {
