@@ -31,6 +31,7 @@ model JournalEntry {
   content   String
   mood      String   @default("😌")
   tags      String   @default("[]") // JSON string of tags array: '["gratitude", "reflection"]'
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -54,6 +55,7 @@ model Habit {
   stackTrigger      String?  // Atomic Habits: "After I pour morning coffee ☕"
   stackAfterHabitId String?
   twoMinuteRule     String?  // Atomic Habits: "Read 1 single page"
+  isDeleted         Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -88,6 +90,7 @@ model Reminder {
   repeatDays    String   @default("[0,1,2,3,4,5,6]") // JSON string of day numbers
   isActive      Boolean  @default(true)
   notifyEnabled Boolean  @default(true)
+  isDeleted     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

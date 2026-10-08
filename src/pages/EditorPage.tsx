@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useJournal } from '../hooks/useJournal';
 import { formatDate, toDateString, MOODS } from '../utils/dateHelpers';
-import { MoodIcon, Check, ArrowLeft, X, Sparkles, UserCheck, Zap } from '../components/icons/AppIcons';
+import { MoodIcon, Check, ArrowLeft, X, Sparkles, UserCheck, Zap, Trash2 } from '../components/icons/AppIcons';
 import './EditorPage.css';
 
 const AUTO_SAVE_MS = 30_000;
@@ -31,7 +31,7 @@ const ATOMIC_PROMPTS = [
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { entries, createEntry, updateEntry } = useJournal();
+  const { entries, createEntry, updateEntry, deleteEntry } = useJournal();
 
   const isNew = id === 'new';
 
@@ -99,6 +99,13 @@ export function EditorPage() {
     setTags((prev) => prev.filter((t) => t !== tag));
   };
 
+  const handleDelete = async () => {
+    if (entryId && window.confirm('Are you sure you want to delete this entry?')) {
+      await deleteEntry(entryId);
+      navigate(-1);
+    }
+  };
+
   return (
     <div className="editor-page">
       {/* Paper texture header */}
@@ -112,6 +119,11 @@ export function EditorPage() {
             <button className="btn-save" onClick={save} title="Save entry">
               <Check size={14} /> Save
             </button>
+            {!isNew && (
+              <button className="btn-back" onClick={handleDelete} title="Delete entry" style={{ color: 'var(--color-text-muted)' }}>
+                <Trash2 size={14} /> Delete
+              </button>
+            )}
             <button className="btn-back" onClick={() => navigate(-1)} title="Go back">
               <ArrowLeft size={14} /> Back
             </button>

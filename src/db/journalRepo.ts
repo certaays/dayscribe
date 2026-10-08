@@ -10,7 +10,8 @@ function notifyChange() {
 
 export const journalRepo = {
   async getAll(): Promise<JournalEntry[]> {
-    return db.journal_entries.orderBy('date').reverse().toArray();
+    const entries = await db.journal_entries.orderBy('date').reverse().toArray();
+    return entries.filter(e => !e.isDeleted);
   },
 
   async getByDate(date: string): Promise<JournalEntry | undefined> {
@@ -44,7 +45,7 @@ export const journalRepo = {
   },
 
   async delete(id: string): Promise<void> {
-    await db.journal_entries.delete(id);
+    await db.journal_entries.update(id, { isDeleted: true });
     notifyChange();
   },
 

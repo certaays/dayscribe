@@ -9,7 +9,8 @@ function notifyChange() {
 
 export const remindersRepo = {
   async getAll(): Promise<Reminder[]> {
-    return db.reminders.orderBy('time').toArray();
+    const reminders = await db.reminders.orderBy('time').toArray();
+    return reminders.filter(r => !r.isDeleted);
   },
 
   async getById(id: string): Promise<Reminder | undefined> {
@@ -33,7 +34,7 @@ export const remindersRepo = {
   },
 
   async delete(id: string): Promise<void> {
-    await db.reminders.delete(id);
+    await db.reminders.update(id, { isDeleted: true });
     notifyChange();
   },
 
@@ -86,7 +87,7 @@ export const remindersRepo = {
   async getStreak(): Promise<number> {
     let streak = 0;
     const today = new Date();
-    const allReminders = await db.reminders.toArray().then((r) => r.filter((x) => x.isActive));
+    const allReminders = await db.reminders.toArray().then((r) => r.filter((x) => x.isActive && !x.isDeleted));
     if (allReminders.length === 0) return 0;
 
     for (let i = 0; i < 365; i++) {

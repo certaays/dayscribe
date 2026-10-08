@@ -11,6 +11,7 @@ export interface JournalEntry {
   content: string;
   mood: string;       // emoji
   tags: string[];
+  isDeleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +23,7 @@ export interface Reminder {
   repeatDays: number[];   // 0=Sun … 6=Sat
   isActive: boolean;
   notifyEnabled: boolean;
+  isDeleted?: boolean;
   createdAt: Date;
 }
 
@@ -69,6 +71,7 @@ export interface Habit {
   stackTrigger?: string;           // e.g., "After I pour my morning tea ☕"
   stackAfterHabitId?: string;      // ID of habit this stacks upon
   twoMinuteRule?: string;          // e.g., "Read 1 single page", "Do 2 deep breaths"
+  isDeleted?: boolean;
 }
 
 export interface HabitLog {

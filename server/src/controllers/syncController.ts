@@ -27,6 +27,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             mood: entry.mood || '😌',
             tags: JSON.stringify(Array.isArray(entry.tags) ? entry.tags : []),
             date: entry.date,
+            isDeleted: entry.isDeleted || false,
           },
           create: {
             id: entry.id,
@@ -36,6 +37,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             content: entry.content,
             mood: entry.mood || '😌',
             tags: JSON.stringify(Array.isArray(entry.tags) ? entry.tags : []),
+            isDeleted: entry.isDeleted || false,
           },
         });
       }
@@ -59,6 +61,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             stackTrigger: h.stackTrigger || null,
             stackAfterHabitId: h.stackAfterHabitId || null,
             twoMinuteRule: h.twoMinuteRule || null,
+            isDeleted: h.isDeleted || false,
           },
           create: {
             id: h.id,
@@ -75,6 +78,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             stackTrigger: h.stackTrigger || null,
             stackAfterHabitId: h.stackAfterHabitId || null,
             twoMinuteRule: h.twoMinuteRule || null,
+            isDeleted: h.isDeleted || false,
           },
         });
       }
@@ -123,6 +127,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             repeatDays: JSON.stringify(Array.isArray(r.repeatDays) ? r.repeatDays : [0, 1, 2, 3, 4, 5, 6]),
             isActive: r.isActive !== undefined ? r.isActive : true,
             notifyEnabled: r.notifyEnabled !== undefined ? r.notifyEnabled : true,
+            isDeleted: r.isDeleted || false,
           },
           create: {
             id: r.id,
@@ -132,6 +137,7 @@ export async function bulkSync(req: AuthenticatedRequest, res: Response): Promis
             repeatDays: JSON.stringify(Array.isArray(r.repeatDays) ? r.repeatDays : [0, 1, 2, 3, 4, 5, 6]),
             isActive: r.isActive !== undefined ? r.isActive : true,
             notifyEnabled: r.notifyEnabled !== undefined ? r.notifyEnabled : true,
+            isDeleted: r.isDeleted || false,
           },
         });
       }

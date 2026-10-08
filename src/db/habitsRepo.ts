@@ -12,11 +12,13 @@ function notifyChange() {
 
 export const habitsRepo = {
   async getAll(): Promise<Habit[]> {
-    return db.habits.toArray();
+    const habits = await db.habits.toArray();
+    return habits.filter(h => !h.isDeleted);
   },
 
   async getActive(): Promise<Habit[]> {
-    return db.habits.filter((h) => h.isActive).toArray();
+    const habits = await db.habits.filter((h) => h.isActive).toArray();
+    return habits.filter(h => !h.isDeleted);
   },
 
   async getById(id: string): Promise<Habit | undefined> {
@@ -40,10 +42,7 @@ export const habitsRepo = {
   },
 
   async delete(id: string): Promise<void> {
-    await db.transaction('rw', db.habits, db.habit_logs, async () => {
-      await db.habits.delete(id);
-      await db.habit_logs.where('habitId').equals(id).delete();
-    });
+    await db.habits.update(id, { isDeleted: true });
     notifyChange();
   },
 
